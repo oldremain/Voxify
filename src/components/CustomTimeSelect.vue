@@ -1,17 +1,16 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { ElSelect, ElOption } from 'element-plus'
+import { ElTimeSelect } from 'element-plus'
 
 const props = withDefaults(
     defineProps<{
         modelValue?: string
-        options?: { value: any; label: string }[]
         placeholder?: string
         label?: string
         required?: boolean
         disabled?: boolean
-        filterable?: boolean
         hasError?: boolean
+        clearable?: boolean
         size?: 'large' | 'small'
     }>(),
     {
@@ -20,37 +19,37 @@ const props = withDefaults(
 )
 const emit = defineEmits(['update:modelValue'])
 
-const countryProxy = computed({
+const valueProxy = computed({
     get: () => props.modelValue,
     set: (v) => emit('update:modelValue', v)
 })
 </script>
 
 <template>
-    <div class="custom-select-wrp">
-        <span v-if="label">{{ label }} <span v-if="required" class="required-symbol">*</span></span>
-        <el-select
-            v-model="countryProxy"
+    <div class="custom-time-picker-wrp" :class="{ invalid: hasError }">
+        <span v-if="label">
+            {{ label }} <span v-if="required" class="required-symbol">*</span>
+        </span>
+        <el-time-select
+            v-model="valueProxy"
             :placeholder="placeholder"
-            :size="size"
-            :filterable="filterable"
             :disabled="disabled"
+            :clearable="clearable"
+            :size="size"
+            start="08:00"
+            step="00:01"
+            end="21:00"
             :class="{ invalid: hasError }"
         >
-            <slot name="option">
-                <el-option
-                    v-for="v in props.options"
-                    :key="v.value"
-                    :label="v.label"
-                    :value="v.value"
-                />
-            </slot>
-        </el-select>
+            <template #suffix>
+                <slot name="suffix" />
+            </template>
+        </el-time-select>
     </div>
 </template>
 
 <style lang="scss">
-.custom-select-wrp {
+.custom-time-picker-wrp {
     .required-symbol {
         color: #f56c6c;
     }

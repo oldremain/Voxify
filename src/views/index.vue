@@ -1,136 +1,341 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
-import { useStorage } from '@vueuse/core'
+import { ref } from 'vue'
+import { useEventListener } from '@vueuse/core'
 import { v4 as uuidv4 } from 'uuid'
-import { cloneDeep, differenceBy, omit } from 'lodash-es'
-import {
-    ElCard,
-    ElButton,
-    ElScrollbar,
-    ElSelect,
-    ElOption,
-    ElTooltip,
-    ElDialog,
-    ElCheckbox,
-    ElDivider,
-    type CheckboxValueType
-} from 'element-plus'
+import { add, cloneDeep } from 'lodash-es'
+import { ElButton, ElTabs, ElTabPane, ElDialog } from 'element-plus'
 import {
     ActionTypes,
     useGoogleSheetsService,
-    type ActionType
+    type GoogleSheetsRow
 } from '@/services/googleSheetsService'
-import { t } from '@/lib/i18n'
-import { round } from '@/lib/round'
+import { DEFAULT_ROW } from './lib'
 import { showSuccess, showError, useDateFormatter, useNumberFormatter } from '@/lib'
-import CountrySelect from '@/components/CountrySelect.vue'
 import CustomInput from '@/components/CustomInput.vue'
-import PlusIcon from '@/assets/icons/plus.svg?component'
-import MinusIcon from '@/assets/icons/minus.svg?component'
-import EditIcon from '@/assets/icons/edit.svg?component'
-import SaveIcon from '@/assets/icons/save.svg?component'
-import CancelIcon from '@/assets/icons/cancel.svg?component'
+import CustomTimeSelect from '@/components/CustomTimeSelect.vue'
+import PlusCircleIcon from '@/assets/icons/plus-circle.svg?component'
+import MinusCircleIcon from '@/assets/icons/minus-circle.svg?component'
+import ReasonSelect from '@/components/ReasonSelect.vue'
+import PhoneNumberInput from '@/components/PhoneNumberInput.vue'
 
 const service = useGoogleSheetsService()
 const dateFormatter = useDateFormatter()
 const numberFormatter = useNumberFormatter({ maximumFractionDigits: 4 })
 
-const time = ref('')
-const sum = ref('')
-const reason = ref('')
+const currentTab = ref(ActionTypes.InitialOrder)
+const rows = ref<GoogleSheetsRow[]>([cloneDeep(DEFAULT_ROW)])
+const password = ref('')
+const showModal = ref(false)
 const isAwaiting = ref(false)
 
-const onSave = async (action: ActionType) => {
+const isValidPassword = ref(true)
+
+const addRow = () => {
+    rows.value = [
+        ...rows.value,
+        {
+            ...DEFAULT_ROW,
+            id: uuidv4()
+        }
+    ]
+}
+
+const deleteRow = (id: string) => {
+    rows.value = rows.value.filter((it) => it.id !== id)
+}
+
+const resetValues = () => {
+    rows.value = [cloneDeep(DEFAULT_ROW)]
+}
+
+const checkPhoneCode = (v: string) => /^(25|29|33|44)/.test(v)
+
+const onUpdatePhoneNumber = (id: string, v: string) => {
+    if (v.length < 2) return
+    const row = rows.value.find((it) => it.id === id)
+    if (row) {
+        row.isValid = checkPhoneCode(v)
+    }
+}
+
+const onPhoneNumberBlur = (id: string) => {
+    const row = rows.value.find((it) => it.id === id)
+    if (row) {
+        row.isValid = row.phone?.length === 9
+    }
+}
+
+const onShowModal = async () => {
+    if (rows.value.some((it) => !it.isValid)) return
+    showModal.value = true
+}
+
+const onCloseModal = () => {
+    isValidPassword.value = true
+    password.value = ''
+}
+
+const onSave = async () => {
+    if (password.value !== '1234') {
+        isValidPassword.value = false
+        return
+    }
     try {
         isAwaiting.value = true
-        await service.saveData({
-            action,
-            payload: { time: time.value, sum: sum.value }
+        const payload = rows.value.map((it) => {
+            if (it.phone) it.phone = `+375${it.phone}`
+            return it
         })
-        time.value = sum.value = reason.value = ''
+        await service.saveData({
+            action: currentTab.value,
+            payload
+        })
+        resetValues()
+        showModal.value = false
         showSuccess('Сохранено')
+    } catch (e: any) {
+        showError(e.message)
     } finally {
         isAwaiting.value = false
     }
+}
+
+const onKeyDown = (e: KeyboardEvent, sum: string) => {
+    if (e.key === 'Enter' && Boolean(sum)) addRow()
 }
 </script>
 
 <template>
     <div class="main-wrp">
-        <div class="tabs-wrp">
-            <el-button type="primary" size="large" :disabled="isAwaiting">
-                Первичный заказ
-            </el-button>
-            <el-button
-                type="primary"
-                size="large"
-                class="secondary-order-btn"
-                :disabled="isAwaiting"
-            >
-                Вторичный заказ
-            </el-button>
-            <el-button type="danger" size="large" :disabled="isAwaiting"> Отказы </el-button>
-            <el-button type="info" size="large" :disabled="isAwaiting"> Возвраты </el-button>
-        </div>
-        <div class="inputs-wrp">
-            <custom-input v-model="time" label="Время" required />
-            <custom-input v-model="sum" type="number" label="Сумма" required />
-        </div>
+        <el-tabs
+            v-model="currentTab"
+            id="custom-tabs"
+            type="border-card"
+            class="order-tabs"
+            @tab-change="resetValues"
+        >
+            <el-tab-pane label="Первичный заказ" :name="ActionTypes.InitialOrder">
+                <div class="inputs-wrp">
+                    <div v-for="(row, idx) in rows" :key="row.id" class="input-row">
+                        <phone-number-input
+                            v-model="row.phone"
+                            label="Номер телефона"
+                            placeholder="291234567"
+                            :has-error="!row.isValid"
+                            required
+                            @update:model-value="(v) => onUpdatePhoneNumber(row.id as string, v)"
+                            @blur="onPhoneNumberBlur(row.id as string)"
+                        >
+                            <template #error>
+                                {{
+                                    !checkPhoneCode(row.phone as string)
+                                        ? 'Некорректный код'
+                                        : 'Некорректная длина'
+                                }}
+                            </template>
+                        </phone-number-input>
+                        <custom-time-select
+                            v-model="row.time"
+                            label="Начать обзвон"
+                            placeholder="00:00"
+                            required
+                        />
+                        <custom-input
+                            v-model="row.sum"
+                            type="number"
+                            label="Сумма заказа"
+                            placeholder="0"
+                            required
+                            @keydown="(e) => onKeyDown(e, row.sum)"
+                        >
+                            <template #suffix> BYN </template>
+                        </custom-input>
+                        <plus-circle-icon class="add-icon" @click="addRow" />
+                        <minus-circle-icon
+                            v-if="idx !== 0"
+                            class="delete-icon"
+                            @click="deleteRow(row.id as string)"
+                        />
+                    </div>
+                </div>
+            </el-tab-pane>
+            <el-tab-pane label="Вторичный заказ" :name="ActionTypes.SecondaryOrder">
+                <div class="inputs-wrp">
+                    <div v-for="(row, idx) in rows" :key="row.id" class="input-row">
+                        <phone-number-input
+                            v-model="row.phone"
+                            label="Номер телефона"
+                            placeholder="291234567"
+                            :has-error="!row.isValid"
+                            required
+                            @update:model-value="(v) => onUpdatePhoneNumber(row.id as string, v)"
+                            @blur="onPhoneNumberBlur(row.id as string)"
+                        >
+                            <template #error>
+                                {{
+                                    !checkPhoneCode(row.phone as string)
+                                        ? 'Некорректный код'
+                                        : 'Некорректная длина'
+                                }}
+                            </template>
+                        </phone-number-input>
+                        <custom-time-select
+                            v-model="row.time"
+                            label="Начать обзвон"
+                            placeholder="00:00"
+                            required
+                        />
+                        <custom-input
+                            v-model="row.sum"
+                            type="number"
+                            label="Сумма заказа"
+                            placeholder="0"
+                            required
+                            @keydown="(e) => onKeyDown(e, row.sum)"
+                        >
+                            <template #suffix> BYN </template>
+                        </custom-input>
+                        <plus-circle-icon class="add-icon" @click="addRow" />
+                        <minus-circle-icon
+                            v-if="idx !== 0"
+                            class="delete-icon"
+                            @click="deleteRow(row.id as string)"
+                        />
+                    </div>
+                </div>
+            </el-tab-pane>
+            <el-tab-pane label="Отказы" :name="ActionTypes.Rejection">
+                <div class="inputs-wrp">
+                    <div v-for="(row, idx) in rows" :key="row.id" class="input-row">
+                        <phone-number-input
+                            v-model="row.phone"
+                            label="Номер телефона"
+                            placeholder="291234567"
+                            :has-error="!row.isValid"
+                            required
+                            @update:model-value="(v) => onUpdatePhoneNumber(row.id as string, v)"
+                            @blur="onPhoneNumberBlur(row.id as string)"
+                        >
+                            <template #error>
+                                {{
+                                    !checkPhoneCode(row.phone as string)
+                                        ? 'Некорректный код'
+                                        : 'Некорректная длина'
+                                }}
+                            </template>
+                        </phone-number-input>
+                        <custom-input
+                            v-model="row.sum"
+                            type="number"
+                            label="Сумма заказа"
+                            placeholder="0"
+                            required
+                            @keydown="(e) => onKeyDown(e, row.sum)"
+                        >
+                            <template #suffix> BYN </template>
+                        </custom-input>
+                        <reason-select
+                            v-model="row.reason"
+                            label="Причина"
+                            placeholder="Причина"
+                            class="reason-select"
+                            required
+                        />
+                        <plus-circle-icon class="add-icon" @click="addRow" />
+                        <minus-circle-icon
+                            v-if="idx !== 0"
+                            class="delete-icon"
+                            @click="deleteRow(row.id as string)"
+                        />
+                    </div>
+                </div>
+            </el-tab-pane>
+            <el-tab-pane label="Возвраты" :name="ActionTypes.Refund">
+                <div class="inputs-wrp">
+                    <div v-for="(row, idx) in rows" :key="row.id" class="input-row">
+                        <custom-input
+                            v-model="row.sum"
+                            type="number"
+                            label="Сумма заказа"
+                            placeholder="0"
+                            required
+                            @keydown="(e) => onKeyDown(e, row.sum)"
+                        >
+                            <template #suffix> BYN </template>
+                        </custom-input>
+                        <plus-circle-icon class="add-icon" @click="addRow" />
+                        <minus-circle-icon
+                            v-if="idx !== 0"
+                            class="delete-icon"
+                            @click="deleteRow(row.id as string)"
+                        />
+                    </div>
+                </div>
+            </el-tab-pane>
+        </el-tabs>
         <el-button
             type="success"
-            class="save-btn"
+            class="show-modal-btn"
             size="large"
             :disabled="isAwaiting"
             :loading="isAwaiting"
-            @click="onSave(ActionTypes.Rejection)"
+            @click="onShowModal"
         >
             Сохранить
         </el-button>
-        <!-- <el-dialog v-model="showDeleteModal" class="delete-modal">
+
+        <el-dialog v-model="showModal" class="password-modal" align-center @close="onCloseModal">
             <template #default>
-                <div class="modal-title">
-                    Вы уверены, что хотите удалить {{ t(rateToDelete?.fromBank ?? '') }}
-                    <span class="delete-modal-tobank-value">
-                        ({{ t(rateToDelete?.toBank ?? '') }} ) ?
-                    </span>
-                </div>
+                <custom-input
+                    v-model="password"
+                    label="Пароль"
+                    placeholder="Пароль"
+                    :has-error="!isValidPassword"
+                    required
+                    @update:model-value="isValidPassword = true"
+                >
+                    <template #error> Неверный пароль </template>
+                </custom-input>
             </template>
             <template #footer>
-                <div class="delete-modal-buttons">
-                    <el-button size="large" :disabled="isLoading" @click="showDeleteModal = false">
-                        Отмена
-                    </el-button>
-                    <el-button
-                        type="danger"
-                        size="large"
-                        :disabled="isLoading"
-                        @click="onConfirmDelete"
-                    >
-                        Подтвердить
-                    </el-button>
-                </div>
+                <el-button
+                    type="success"
+                    size="large"
+                    class="save-btn"
+                    :disabled="isAwaiting"
+                    :loading="isAwaiting"
+                    @click="onSave"
+                >
+                    Далее
+                </el-button>
             </template>
-        </el-dialog> -->
+        </el-dialog>
     </div>
 </template>
 
 <style lang="scss">
 .main-wrp {
     width: 100%;
-    max-width: 900px;
+    max-width: 1000px;
     margin: auto;
 
-    .tabs-wrp {
-        display: flex;
-        justify-content: center;
+    .order-tabs {
         margin-bottom: 20px;
     }
 
     .inputs-wrp {
-        display: flex;
-        justify-content: center;
-        gap: 8px;
         margin-bottom: 20px;
+    }
+
+    .input-row {
+        display: flex;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 16px;
+        > * {
+            max-width: 230px;
+        }
     }
 
     .el-button {
@@ -154,60 +359,38 @@ const onSave = async (action: ActionType) => {
         }
     }
 
+    .show-modal-btn,
     .save-btn {
         margin: auto;
     }
 
-    // .copy-rate-btn {
-    //     color: #028102;
-    //     transition: all 0.15s ease;
-    //     @media (hover) {
-    //         &:hover {
-    //             color: #026f02;
-    //         }
-    //     }
-    // }
+    .reason-select {
+        min-width: 230px;
+    }
 
-    // .delete-rate-btn {
-    //     color: #d92800;
-    //     transition: all 0.15s ease;
-    //     @media (hover) {
-    //         &:hover {
-    //             color: #b92302;
-    //         }
-    //     }
-    // }
+    .add-icon {
+        color: rgb(1, 159, 1);
+        &:hover {
+            color: rgb(1, 120, 1);
+        }
+    }
 
-    // //Modal styles
-    // .el-dialog {
-    //     max-width: 780px !important;
-    // }
+    .delete-icon {
+        color: rgb(225, 60, 60);
+        &:hover {
+            color: rgb(180, 54, 54);
+        }
+    }
 
-    // .delete-modal {
-    //     .el-button {
-    //         margin: 0;
-    //     }
-    // }
+    .add-icon,
+    .delete-icon {
+        margin-top: 33px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
 
-    // .modal-title {
-    //     margin-top: 18px;
-    //     margin-bottom: 30px;
-    //     text-align: center;
-    //     font-size: 24px;
-    //     font-weight: 500;
-    // }
-
-    // .save-icon {
-    //     color: rgb(1, 159, 1);
-    // }
-
-    // .cancel-icon {
-    //     color: rgb(225, 60, 60);
-    // }
-}
-
-@media (max-width: 991px) {
-    .main-wrp {
+    .password-modal {
+        max-width: 600px;
     }
 }
 </style>

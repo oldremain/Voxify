@@ -9,11 +9,17 @@ export const ActionTypes = {
 
 export type ActionType = (typeof ActionTypes)[keyof typeof ActionTypes]
 
+export type GoogleSheetsRow = {
+    id?: string
+    phone?: string
+    time: string
+    sum: string
+    reason?: string
+    isValid?: boolean
+}
+
 class GoogleSheetsService {
-    async saveData(data: {
-        action: ActionType
-        payload: { time: string; sum: string; reason?: string }
-    }) {
+    async saveData(data: { action: ActionType; payload: GoogleSheetsRow[] }) {
         await callApi({
             base: 'https://script.google.com',
             url: '/macros/s/AKfycbwCluZ9VfnsrMs0sswC0HyNxPnhzlEirOAiJyEYKD174gXV0PTjGK06rKiHq10RlcWjfQ/exec',

@@ -21,7 +21,7 @@ const props = withDefaults(
         type: 'text'
     }
 )
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'blur', 'keydown'])
 
 const valueProxy = computed({
     get: () => props.modelValue,
@@ -45,12 +45,22 @@ const valueProxy = computed({
                 :clearable="clearable"
                 :step="step"
                 :resize="resize"
+                @blur="emit('blur')"
+                @keydown="(e) => emit('keydown', e)"
             >
+                <template v-if="$slots['prepend']" #prepend>
+                    <slot name="prepend" />
+                </template>
+                <template #prefix>
+                    <slot name="prefix" />
+                </template>
                 <template #suffix>
                     <slot name="suffix" />
                 </template>
             </el-input>
-            <slot name="outside" />
+            <div v-if="hasError" class="error-msg">
+                <slot name="error" />
+            </div>
         </div>
     </div>
 </template>
@@ -67,7 +77,12 @@ const valueProxy = computed({
     }
     .input-wrp {
         display: flex;
+        flex-direction: column;
         column-gap: 8px;
+    }
+    .error-msg {
+        color: #f56c6c;
+        font-size: 12px;
     }
 }
 </style>

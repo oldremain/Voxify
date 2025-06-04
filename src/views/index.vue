@@ -35,7 +35,8 @@ const addRow = () => {
         ...rows.value,
         {
             ...DEFAULT_ROW,
-            id: uuidv4()
+            id: uuidv4(),
+            time: rows.value[0].time
         }
     ]
 }
@@ -253,6 +254,23 @@ const onKeyDown = (e: KeyboardEvent, sum: string) => {
             <el-tab-pane label="Возвраты" :name="ActionTypes.Refund">
                 <div class="inputs-wrp">
                     <div v-for="(row, idx) in rows" :key="row.id" class="input-row">
+                        <phone-number-input
+                            v-model="row.phone"
+                            label="Номер телефона"
+                            placeholder="291234567"
+                            :has-error="!row.isValid"
+                            required
+                            @update:model-value="(v) => onUpdatePhoneNumber(row.id as string, v)"
+                            @blur="onPhoneNumberBlur(row.id as string)"
+                        >
+                            <template #error>
+                                {{
+                                    !checkPhoneCode(row.phone as string)
+                                        ? 'Некорректный код'
+                                        : 'Некорректная длина'
+                                }}
+                            </template>
+                        </phone-number-input>
                         <custom-input
                             v-model="row.sum"
                             type="number"
@@ -321,6 +339,29 @@ const onKeyDown = (e: KeyboardEvent, sum: string) => {
 
     .order-tabs {
         margin-bottom: 20px;
+        .el-tabs__item {
+            color: black !important;
+            &.is-active {
+                color: black;
+                background-color: rgb(162, 53, 225) !important;
+                text-decoration: underline;
+                text-underline-offset: 4px;
+                font-weight: bolder;
+                font-size: 20px;
+            }
+            &:nth-child(1) {
+                background-color: #409eff;
+            }
+            &:nth-child(2) {
+                background-color: #ab3528;
+            }
+            &:nth-child(3) {
+                background-color: #f95540;
+            }
+            &:nth-child(4) {
+                background-color: #8b8b8b;
+            }
+        }
     }
 
     .inputs-wrp {

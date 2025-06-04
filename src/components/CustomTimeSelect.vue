@@ -37,7 +37,7 @@ const valueProxy = computed({
             :clearable="clearable"
             :size="size"
             start="08:00"
-            step="00:01"
+            step="01:00"
             end="21:00"
             :class="{ invalid: hasError }"
         >

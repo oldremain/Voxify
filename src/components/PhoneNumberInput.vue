@@ -16,7 +16,7 @@ const props = withDefaults(
         size: 'large'
     }
 )
-const emit = defineEmits(['update:modelValue', 'blur'])
+const emit = defineEmits(['update:modelValue', 'blur', 'keydown'])
 
 const valueProxy = computed({
     get: () => props.modelValue,
@@ -34,6 +34,7 @@ const valueProxy = computed({
         :disabled="disabled"
         :required="required"
         :has-error="hasError"
+        @keydown="(e) => emit('keydown', e)"
         @blur="emit('blur')"
     >
         <template #prepend>+375</template>

@@ -11,11 +11,14 @@ export type ActionType = (typeof ActionTypes)[keyof typeof ActionTypes]
 
 export type GoogleSheetsRow = {
     id?: string
+    date?: string
+    timeCreated?: string
     phone?: string
-    time: string
+    internationalPhone?: string
+    callTime: string
     sum: string
     reason?: string
-    isValid?: boolean
+    isValidPhone?: boolean
 }
 
 class GoogleSheetsService {

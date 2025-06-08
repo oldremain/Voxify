@@ -35,7 +35,8 @@ const onUpdatePhoneNumber = (row: GoogleSheetsRow, v: string) => {
 }
 
 const onPhoneNumberBlur = (row: GoogleSheetsRow) => {
-    row.isValidPhone = checkPhoneCode(row.phone || '')
+    if (!row.phone) return
+    row.isValidPhone = checkPhoneCode(row.phone)
 }
 
 const addRow = () => {

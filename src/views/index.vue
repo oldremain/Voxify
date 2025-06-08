@@ -124,9 +124,16 @@ const onSave = async () => {
                 })
             )
         }
-        await Promise.all(promises)
+        const promiseResult = await Promise.allSettled(promises)
+        let allFullfilled = true
+        promiseResult.forEach((result) => {
+            if (result.status === 'rejected') {
+                allFullfilled = false
+            }
+        })
+        if (allFullfilled) showSuccess('Сохранено')
+        else showError('Ошибка сохранения данных')
         resetValues()
-        showSuccess('Сохранено')
     } catch (e: any) {
         showError(e.message)
     } finally {

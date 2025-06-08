@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
+import { omit } from 'lodash-es'
 import { useNow } from '@vueuse/core'
 import type { ActionType, BotKind, GoogleSheetsRow } from '@/services/googleSheetsService'
 

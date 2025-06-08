@@ -2,7 +2,12 @@
 import { computed, nextTick, watch } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import { DEFAULT_ROW } from '@/views/lib'
-import { ActionTypes, type ActionType, type GoogleSheetsRow } from '@/services/googleSheetsService'
+import {
+    ActionTypes,
+    BotKind,
+    type ActionType,
+    type GoogleSheetsRow
+} from '@/services/googleSheetsService'
 import CustomInput from '@/components/CustomInput.vue'
 import PlusCircleIcon from '@/assets/icons/plus-circle.svg?component'
 import MinusCircleIcon from '@/assets/icons/minus-circle.svg?component'
@@ -44,7 +49,8 @@ const addRow = () => {
     const newRow = {
         ...DEFAULT_ROW,
         id: uuidv4(),
-        callTime: rows.value?.[0]?.callTime as string
+        callTime: rows.value?.[0]?.callTime as string,
+        botKind: BotKind[props.actionType]
     }
     if (props.actionType === ActionTypes.Rejection) {
         newRow.reason = ''

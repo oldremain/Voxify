@@ -7,6 +7,13 @@ export const ActionTypes = {
     Refund: 4
 } as const
 
+export const BotKind: Record<ActionType, string> = {
+    1: 'Первичный обзвон',
+    2: 'Вторичный обзвон',
+    3: 'Обзвон отказов',
+    4: 'Обзвон возвратов'
+} as const
+
 export type ActionType = (typeof ActionTypes)[keyof typeof ActionTypes]
 
 export type GoogleSheetsRow = {
@@ -19,6 +26,7 @@ export type GoogleSheetsRow = {
     sum: string
     reason?: string
     isValidPhone?: boolean
+    botKind?: (typeof BotKind)[ActionType] //For webhook
 }
 
 class GoogleSheetsService {

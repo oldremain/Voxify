@@ -35,8 +35,7 @@ const onUpdatePhoneNumber = (row: GoogleSheetsRow, v: string) => {
 }
 
 const onPhoneNumberBlur = (row: GoogleSheetsRow) => {
-    if ((row.phone || '').length < 2) return
-    row.isValidPhone = row.phone?.length === 9
+    row.isValidPhone = checkPhoneCode(row.phone || '')
 }
 
 const addRow = () => {
@@ -70,7 +69,16 @@ const focusOnLastRow = () => {
     })
 }
 
-const onKeyDown = (e: KeyboardEvent) => {
+const onPhoneKeyDown = (e: KeyboardEvent, row: GoogleSheetsRow, idx: number) => {
+    if (e.key === 'Enter' && (row.phone?.length || 0) === 9 && row.isValidPhone) {
+        const sumInput = document.querySelector(
+            `.${inputWrpClass.value} .sum-input[data-order="${idx}"] input`
+        ) as HTMLInputElement
+        if (sumInput) sumInput?.focus()
+    }
+}
+
+const onSumKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Enter' && rows.value?.every((it) => it.phone && it.sum)) {
         addRow()
         focusOnLastRow()
@@ -100,7 +108,7 @@ watch(
                 class="phone-number-input"
                 required
                 @update:model-value="(v) => onUpdatePhoneNumber(row, v)"
-                @keydown="onKeyDown"
+                @keydown="(e) => onPhoneKeyDown(e, row, idx)"
                 @blur="onPhoneNumberBlur(row)"
             >
                 <template #error>
@@ -117,8 +125,10 @@ watch(
                 label="Сумма заказа"
                 placeholder="0"
                 :disabled="disabled"
+                class="sum-input"
+                :data-order="idx"
                 required
-                @keydown="onKeyDown"
+                @keydown="onSumKeyDown"
             >
                 <template #suffix> BYN </template>
             </custom-input>

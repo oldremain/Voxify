@@ -15,6 +15,9 @@ const props = withDefaults(
         clearable?: boolean
         step?: number
         resize?: 'none' | 'both' | 'horizontal' | 'vertical'
+        maxLength?: string | number
+        formatter?: (value: string) => string
+        parser?: (value: string) => string
     }>(),
     {
         size: 'large',
@@ -45,6 +48,9 @@ const valueProxy = computed({
                 :clearable="clearable"
                 :step="step"
                 :resize="resize"
+                :parser="parser"
+                :formatter="formatter"
+                :maxlength="maxLength"
                 @blur="emit('blur')"
                 @keydown="(e) => emit('keydown', e)"
             >

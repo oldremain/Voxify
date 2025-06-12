@@ -143,43 +143,43 @@ const saveToGoogleSheets = async () => {
     const promiseResult = await Promise.allSettled(promises)
 
     const data = [] as UpdateCells[]
-    if (
-        promiseResult[0]?.status === 'fulfilled' &&
-        (<GoogleSheetsResponse>promiseResult[0].value)?.success
-    )
-        data.push(
-            prepareGoogleResponseRows(
-                (<GoogleSheetsResponse>promiseResult[0].value).rows,
-                'Первичные заказы'
-            )
-        )
-    if (
-        promiseResult[1]?.status === 'fulfilled' &&
-        (<GoogleSheetsResponse>promiseResult[1].value)?.success
-    )
-        data.push(
-            prepareGoogleResponseRows(
-                (<GoogleSheetsResponse>promiseResult[1].value).rows,
-                'Вторичные заказы'
-            )
-        )
-    if (
-        promiseResult[2]?.status === 'fulfilled' &&
-        (<GoogleSheetsResponse>promiseResult[2].value)?.success
-    )
-        data.push(
-            prepareGoogleResponseRows((<GoogleSheetsResponse>promiseResult[2].value).rows, 'Отказы')
-        )
-    if (
-        promiseResult[3]?.status === 'fulfilled' &&
-        (<GoogleSheetsResponse>promiseResult[3].value)?.success
-    )
-        data.push(
-            prepareGoogleResponseRows(
-                (<GoogleSheetsResponse>promiseResult[3].value).rows,
-                'Возвраты'
-            )
-        )
+    // if (
+    //     promiseResult[0]?.status === 'fulfilled' &&
+    //     (<GoogleSheetsResponse>promiseResult[0].value)?.success
+    // )
+    //     data.push(
+    //         prepareGoogleResponseRows(
+    //             (<GoogleSheetsResponse>promiseResult[0].value).rows,
+    //             'Первичные заказы'
+    //         )
+    //     )
+    // if (
+    //     promiseResult[1]?.status === 'fulfilled' &&
+    //     (<GoogleSheetsResponse>promiseResult[1].value)?.success
+    // )
+    //     data.push(
+    //         prepareGoogleResponseRows(
+    //             (<GoogleSheetsResponse>promiseResult[1].value).rows,
+    //             'Вторичные заказы'
+    //         )
+    //     )
+    // if (
+    //     promiseResult[2]?.status === 'fulfilled' &&
+    //     (<GoogleSheetsResponse>promiseResult[2].value)?.success
+    // )
+    //     data.push(
+    //         prepareGoogleResponseRows((<GoogleSheetsResponse>promiseResult[2].value).rows, 'Отказы')
+    //     )
+    // if (
+    //     promiseResult[3]?.status === 'fulfilled' &&
+    //     (<GoogleSheetsResponse>promiseResult[3].value)?.success
+    // )
+    //     data.push(
+    //         prepareGoogleResponseRows(
+    //             (<GoogleSheetsResponse>promiseResult[3].value).rows,
+    //             'Возвраты'
+    //         )
+    //     )
 
     const allFullfilled = promiseResult.every(
         (result) => result?.status === 'fulfilled' && result?.value

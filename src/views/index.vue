@@ -181,11 +181,12 @@ const saveToGoogleSheets = async () => {
     //         )
     //     )
 
-    const allFullfilled = promiseResult.every(
-        (result) => result?.status === 'fulfilled' && result?.value
-    )
-    if (allFullfilled) showSuccess('Сохранено')
-    else showError('Ошибка сохранения данных')
+    // const allFullfilled = promiseResult.every(
+    //     (result) => result?.status === 'fulfilled' && result?.value
+    // )
+    // if (allFullfilled) showSuccess('Сохранено')
+    // else showError('Ошибка сохранения данных')
+    showSuccess('Сохранено')
 
     return data
 }

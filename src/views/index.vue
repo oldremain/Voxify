@@ -248,7 +248,7 @@ const onSave = async () => {
         isAwaiting.value = true
         showModal.value = false
         const data = await saveToGoogleSheets()
-        await sendWebHook(data)
+        //await sendWebHook(data)
         resetValues()
     } catch (e: any) {
         showError(e.message)
@@ -306,7 +306,7 @@ const onSave = async () => {
         </el-tabs>
 
         <div class="footer-row">
-            <custom-date-picker v-model="callDate" label="Дата" size="large" class="date-select" />
+            <!-- <custom-date-picker v-model="callDate" label="Дата" size="large" class="date-select" /> -->
             <custom-time-select
                 v-model="callTime"
                 label="Начать обзвон"

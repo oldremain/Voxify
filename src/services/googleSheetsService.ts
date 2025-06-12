@@ -56,7 +56,7 @@ class GoogleSheetsService {
             base: 'https://script.google.com',
             url: '/macros/s/AKfycbwCluZ9VfnsrMs0sswC0HyNxPnhzlEirOAiJyEYKD174gXV0PTjGK06rKiHq10RlcWjfQ/exec',
             method: 'POST',
-            mode: 'no-cors',
+            //mode: 'no-cors',
             data
         })
         //return await resp.json()

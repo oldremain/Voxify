@@ -141,6 +141,7 @@ const saveToGoogleSheets = async () => {
     }
 
     const promiseResult = await Promise.allSettled(promises)
+    console.log(promiseResult)
 
     const data = [] as UpdateCells[]
     // if (

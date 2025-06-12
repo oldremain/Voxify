@@ -51,15 +51,15 @@ class GoogleSheetsService {
         payload: GoogleSheetsRow[]
     }): Promise<GoogleSheetsResponse> {
         const resp = await callApi({
-            base: `${window.location.origin}`,
-            url: '/google-script',
-            method: 'POST',
-            data
-            // base: 'https://script.google.com',
-            // url: '/macros/s/AKfycbwCluZ9VfnsrMs0sswC0HyNxPnhzlEirOAiJyEYKD174gXV0PTjGK06rKiHq10RlcWjfQ/exec',
+            // base: `${window.location.origin}`,
+            // url: '/google-script',
             // method: 'POST',
-            // mode: 'no-cors',
             // data
+            base: 'https://script.google.com',
+            url: '/macros/s/AKfycbwCluZ9VfnsrMs0sswC0HyNxPnhzlEirOAiJyEYKD174gXV0PTjGK06rKiHq10RlcWjfQ/exec',
+            method: 'POST',
+            mode: 'no-cors',
+            data
         })
         return await resp.json()
     }

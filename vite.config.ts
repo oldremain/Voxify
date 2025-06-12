@@ -41,13 +41,32 @@ export default defineConfig({
         }
     },
     server: {
+        // proxy: {
+        //     '/google-script': {
+        //         target: 'https://script.google.com',
+        //         changeOrigin: true,
+        //         rewrite: (path) =>
+        //             path.replace(
+        //                 /^\/google-script/,
+        //                 '/macros/s/AKfycbwCluZ9VfnsrMs0sswC0HyNxPnhzlEirOAiJyEYKD174gXV0PTjGK06rKiHq10RlcWjfQ/exec'
+        //             ),
+        //         configure: (proxy) => {
+        //             proxy.on('proxyRes', (proxyRes) => {
+        //                 proxyRes.headers['Access-Control-Allow-Origin'] = '*'
+        //                 proxyRes.headers['Access-Control-Allow-Methods'] =
+        //                     'GET, POST, PUT, DELETE, OPTIONS'
+        //                 proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        //             })
+        //         }
+        //     }
+        // }
         proxy: {
-            '/google-script': {
-                target: 'https://script.google.com',
-                changeOrigin: true,
+            '/exec': {
+                // target: 'https://script.google.com',
+                // changeOrigin: true,
                 rewrite: (path) =>
                     path.replace(
-                        /^\/google-script/,
+                        /^\/exec/,
                         '/macros/s/AKfycbwCluZ9VfnsrMs0sswC0HyNxPnhzlEirOAiJyEYKD174gXV0PTjGK06rKiHq10RlcWjfQ/exec'
                     ),
                 configure: (proxy) => {

@@ -45,11 +45,9 @@ export type GoogleSheetsResponse = {
     rows: { id: number; phone: string }[]
 }
 
+//: Promise<GoogleSheetsResponse>
 class GoogleSheetsService {
-    async saveData(data: {
-        action: ActionType
-        payload: GoogleSheetsRow[]
-    }): Promise<GoogleSheetsResponse> {
+    async saveData(data: { action: ActionType; payload: GoogleSheetsRow[] }) {
         const resp = await callApi({
             // base: `${window.location.origin}`,
             // url: '/google-script',

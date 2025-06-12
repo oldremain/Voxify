@@ -14,7 +14,18 @@ export const BotKind: Record<ActionType, string> = {
     4: 'Обзвон возвратов'
 } as const
 
+export const GoogleSheetName = {
+    1: 'Первичные заказы',
+    2: 'Вторичные заказы',
+    3: 'Отказы',
+    4: 'Возвраты'
+} as const
+
 export type ActionType = (typeof ActionTypes)[keyof typeof ActionTypes]
+
+export type BotKindType = (typeof BotKind)[ActionType]
+
+export type GoogleSheetNameType = (typeof GoogleSheetName)[ActionType]
 
 export type GoogleSheetsRow = {
     id?: string
@@ -26,18 +37,31 @@ export type GoogleSheetsRow = {
     sum: string
     reason?: string
     isValidPhone?: boolean
-    botKind?: (typeof BotKind)[ActionType] //For webhook
+    botKind?: BotKindType //For webhook
+}
+
+export type GoogleSheetsResponse = {
+    success: boolean
+    rows: { id: number; phone: string }[]
 }
 
 class GoogleSheetsService {
-    async saveData(data: { action: ActionType; payload: GoogleSheetsRow[] }) {
-        await callApi({
-            base: 'https://script.google.com',
-            url: '/macros/s/AKfycbwCluZ9VfnsrMs0sswC0HyNxPnhzlEirOAiJyEYKD174gXV0PTjGK06rKiHq10RlcWjfQ/exec',
+    async saveData(data: {
+        action: ActionType
+        payload: GoogleSheetsRow[]
+    }): Promise<GoogleSheetsResponse> {
+        const resp = await callApi({
+            base: `${window.location.origin}`,
+            url: '/google-script',
             method: 'POST',
-            mode: 'no-cors',
             data
+            // base: 'https://script.google.com',
+            // url: '/macros/s/AKfycbwCluZ9VfnsrMs0sswC0HyNxPnhzlEirOAiJyEYKD174gXV0PTjGK06rKiHq10RlcWjfQ/exec',
+            // method: 'POST',
+            // mode: 'no-cors',
+            // data
         })
+        return await resp.json()
     }
 }
 

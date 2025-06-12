@@ -39,5 +39,26 @@ export default defineConfig({
                 api: 'modern-compiler'
             }
         }
+    },
+    server: {
+        proxy: {
+            '/google-script': {
+                target: 'https://script.google.com',
+                changeOrigin: true,
+                rewrite: (path) =>
+                    path.replace(
+                        /^\/google-script/,
+                        '/macros/s/AKfycbwCluZ9VfnsrMs0sswC0HyNxPnhzlEirOAiJyEYKD174gXV0PTjGK06rKiHq10RlcWjfQ/exec'
+                    ),
+                configure: (proxy) => {
+                    proxy.on('proxyRes', (proxyRes) => {
+                        proxyRes.headers['Access-Control-Allow-Origin'] = '*'
+                        proxyRes.headers['Access-Control-Allow-Methods'] =
+                            'GET, POST, PUT, DELETE, OPTIONS'
+                        proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+                    })
+                }
+            }
+        }
     }
 })

@@ -5,15 +5,18 @@ import {
     ActionTypes,
     BotKind,
     useGoogleSheetsService,
-    type GoogleSheetsRow
+    type GoogleSheetsRow,
+    type GoogleSheetsResponse
 } from '@/services/googleSheetsService'
 import { useWebHookService } from '@/services/webHookService'
 import {
     DEFAULT_ROW,
     DEFAULT_TIME,
+    prepareGoogleResponseRows,
     prepareRowsForWebHook,
     transformRow,
-    transformRows
+    transformRows,
+    type UpdateCells
 } from './lib'
 import { showSuccess, showError } from '@/lib'
 import CustomInput from '@/components/CustomInput.vue'
@@ -25,18 +28,10 @@ const service = useGoogleSheetsService()
 const webHookService = useWebHookService()
 
 const currentTab = ref(ActionTypes.InitialOrder)
-const initialOrderRows = ref<GoogleSheetsRow[]>([
-    { ...DEFAULT_ROW, botKind: BotKind[ActionTypes.InitialOrder] }
-])
-const secondaryOrderRows = ref<GoogleSheetsRow[]>([
-    { ...DEFAULT_ROW, botKind: BotKind[ActionTypes.SecondaryOrder] }
-])
-const rejectionOrderRows = ref<GoogleSheetsRow[]>([
-    { ...DEFAULT_ROW, botKind: BotKind[ActionTypes.Rejection], reason: '' }
-])
-const refundOrderRows = ref<GoogleSheetsRow[]>([
-    { ...DEFAULT_ROW, botKind: BotKind[ActionTypes.Refund] }
-])
+const initialOrderRows = ref<GoogleSheetsRow[]>([{ ...DEFAULT_ROW }])
+const secondaryOrderRows = ref<GoogleSheetsRow[]>([{ ...DEFAULT_ROW }])
+const rejectionOrderRows = ref<GoogleSheetsRow[]>([{ ...DEFAULT_ROW, reason: '' }])
+const refundOrderRows = ref<GoogleSheetsRow[]>([{ ...DEFAULT_ROW }])
 const callDate = ref(new Date())
 const callTime = ref(DEFAULT_TIME)
 const password = ref('')
@@ -108,7 +103,10 @@ const saveToGoogleSheets = async () => {
                 payload: initialOrderToSave.value
             })
         )
+    } else {
+        promises.push(Promise.resolve(1))
     }
+
     if (secondaryOrderToSave.value.length) {
         promises.push(
             await service.saveData({
@@ -116,7 +114,10 @@ const saveToGoogleSheets = async () => {
                 payload: secondaryOrderToSave.value
             })
         )
+    } else {
+        promises.push(Promise.resolve(1))
     }
+
     if (rejectOrderToSave.value.length) {
         promises.push(
             await service.saveData({
@@ -124,7 +125,10 @@ const saveToGoogleSheets = async () => {
                 payload: rejectOrderToSave.value
             })
         )
+    } else {
+        promises.push(Promise.resolve(1))
     }
+
     if (refundOrderToSave.value.length) {
         promises.push(
             await service.saveData({
@@ -132,35 +136,89 @@ const saveToGoogleSheets = async () => {
                 payload: refundOrderToSave.value
             })
         )
+    } else {
+        promises.push(Promise.resolve(1))
     }
+
     const promiseResult = await Promise.allSettled(promises)
 
-    const allFullfilled = promiseResult.every((result) => result.status === 'fulfilled')
+    const data = [] as UpdateCells[]
+    if (
+        promiseResult[0]?.status === 'fulfilled' &&
+        (<GoogleSheetsResponse>promiseResult[0].value)?.success
+    )
+        data.push(
+            prepareGoogleResponseRows(
+                (<GoogleSheetsResponse>promiseResult[0].value).rows,
+                'Первичные заказы'
+            )
+        )
+    if (
+        promiseResult[1]?.status === 'fulfilled' &&
+        (<GoogleSheetsResponse>promiseResult[1].value)?.success
+    )
+        data.push(
+            prepareGoogleResponseRows(
+                (<GoogleSheetsResponse>promiseResult[1].value).rows,
+                'Вторичные заказы'
+            )
+        )
+    if (
+        promiseResult[2]?.status === 'fulfilled' &&
+        (<GoogleSheetsResponse>promiseResult[2].value)?.success
+    )
+        data.push(
+            prepareGoogleResponseRows((<GoogleSheetsResponse>promiseResult[2].value).rows, 'Отказы')
+        )
+    if (
+        promiseResult[3]?.status === 'fulfilled' &&
+        (<GoogleSheetsResponse>promiseResult[3].value)?.success
+    )
+        data.push(
+            prepareGoogleResponseRows(
+                (<GoogleSheetsResponse>promiseResult[3].value).rows,
+                'Возвраты'
+            )
+        )
+
+    const allFullfilled = promiseResult.every(
+        (result) => result?.status === 'fulfilled' && result?.value
+    )
     if (allFullfilled) showSuccess('Сохранено')
     else showError('Ошибка сохранения данных')
+
+    return data
 }
 
-const sendWebHook = async () => {
+const sendWebHook = async (data: UpdateCells[]) => {
     const promises = [] as Promise<any>[]
     const initialOrders = prepareRowsForWebHook({
         rows: initialOrderToSave.value,
         callDate: callDate.value,
-        callTime: callTime.value
+        callTime: callTime.value,
+        botKind: BotKind[ActionTypes.InitialOrder],
+        updateCells: data.find((it) => it.sheetName === 'Первичные заказы') || {}
     })
     const secondaryOrders = prepareRowsForWebHook({
         rows: secondaryOrderToSave.value,
         callDate: callDate.value,
-        callTime: callTime.value
+        callTime: callTime.value,
+        botKind: BotKind[ActionTypes.SecondaryOrder],
+        updateCells: data.find((it) => it.sheetName === 'Вторичные заказы') || {}
     })
     const rejectOrders = prepareRowsForWebHook({
         rows: rejectOrderToSave.value,
         callDate: callDate.value,
-        callTime: callTime.value
+        callTime: callTime.value,
+        botKind: BotKind[ActionTypes.Rejection],
+        updateCells: data.find((it) => it.sheetName === 'Отказы') || {}
     })
     const refundOrders = prepareRowsForWebHook({
         rows: refundOrderToSave.value,
         callDate: callDate.value,
-        callTime: callTime.value
+        callTime: callTime.value,
+        botKind: BotKind[ActionTypes.Refund],
+        updateCells: data.find((it) => it.sheetName === 'Возвраты') || {}
     })
     if (initialOrders?.length) {
         initialOrders.forEach((it) => promises.push(webHookService.sendWebHook(it)))
@@ -174,7 +232,6 @@ const sendWebHook = async () => {
     if (refundOrders?.length) {
         refundOrders.forEach((it) => promises.push(webHookService.sendWebHook(it)))
     }
-    console.log(initialOrders, secondaryOrders, rejectOrders, refundOrders)
 
     const promiseResult = await Promise.allSettled(promises)
     const allFullfilled = promiseResult.every((result) => result.status === 'fulfilled')
@@ -190,8 +247,8 @@ const onSave = async () => {
     try {
         isAwaiting.value = true
         showModal.value = false
-        await saveToGoogleSheets()
-        //await sendWebHook()
+        const data = await saveToGoogleSheets()
+        await sendWebHook(data)
         resetValues()
     } catch (e: any) {
         showError(e.message)
@@ -249,7 +306,7 @@ const onSave = async () => {
         </el-tabs>
 
         <div class="footer-row">
-            <!-- <custom-date-picker v-model="callDate" label="Дата" size="large" class="date-select" /> -->
+            <custom-date-picker v-model="callDate" label="Дата" size="large" class="date-select" />
             <custom-time-select
                 v-model="callTime"
                 label="Начать обзвон"

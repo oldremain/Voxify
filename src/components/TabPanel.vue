@@ -49,8 +49,7 @@ const addRow = () => {
     const newRow = {
         ...DEFAULT_ROW,
         id: uuidv4(),
-        callTime: rows.value?.[0]?.callTime as string,
-        botKind: BotKind[props.actionType]
+        callTime: rows.value?.[0]?.callTime as string
     }
     if (props.actionType === ActionTypes.Rejection) {
         newRow.reason = ''

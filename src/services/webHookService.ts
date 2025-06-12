@@ -13,7 +13,6 @@ class WebHookService {
             headers: {
                 Authorization: `Bearer ${TOKEN}`
             },
-            mode: 'no-cors',
             data
         })
     }
